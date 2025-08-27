@@ -1,6 +1,9 @@
 #include <iostream>
 #include <GL/glew.h>
 #include <GLFW//glfw3.h>
+#include <cstdlib> // For rand() and srand()
+#include <ctime>   // For time()
+#include <time.h>       /* time_t, struct tm, difftime, time, mktime */
 
 using namespace std;
 
@@ -35,10 +38,11 @@ static const char* fragmentShader = "                                           
 #version 330                                                                               \n\
                                                                                            \n\
 // diferente da entrada por layout, uniform é uma entrada em tempo de execução             \n\
-uniform in vec3 triColor;																   \n\
+uniform vec3 triColor;																	   \n\
+out vec4 color;																			   \n\
                                                                                            \n\
 void main() {                                                                              \n\
-	color = vec3(triColor, 1.0);                                                           \n\
+	color = vec4(triColor, 1.0);                                                           \n\
 }                                                                                          \n\
 ";
 
@@ -71,7 +75,7 @@ void create_triangle() {
 }
 
 // função para executar um buffer na tela
-void add_triangle(GLuint program, const char* shaderCode, GLenum type) {
+void add_shader(GLuint program, const char* shaderCode, GLenum type) {
 	GLuint _shader = glCreateShader(type);
 
 	// converte char para glchar
@@ -86,7 +90,15 @@ void add_triangle(GLuint program, const char* shaderCode, GLenum type) {
 }
 
 void add_program() {
+	shaderProgram = glCreateProgram();
+	if(!shaderProgram) {
+		cout << "Erro: falha ao criar o programa!";
+	}
 
+	add_shader(shaderProgram, vertexShader, GL_VERTEX_SHADER);
+	add_shader(shaderProgram, fragmentShader, GL_FRAGMENT_SHADER);
+
+	glLinkProgram(shaderProgram);
 }
 
 
@@ -122,7 +134,7 @@ int main() {
 	glfwMakeContextCurrent(window); // tornando essa janela como principal
 
 	//iniciando o Glew
-	glewExperimental = GLU_TRUE;
+	glewExperimental = GL_TRUE;
 	if (glewInit() != GLEW_OK) {
 		cout << "Erro: não foi possível iniciar o glew";
 		glfwDestroyWindow(window);
@@ -132,10 +144,35 @@ int main() {
 
 	glViewport(0, 0, bufferWidth, bufferHeight);
 
+	time_t timer;
+
+	create_triangle();
+	add_program();
+
 	while (!glfwWindowShouldClose(window)) {
-		glClearColor(0.0f, 1.0f, 1.0f, 1.0f);
+
+		// cor de fundo da janela
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glfwPollEvents();
 		glClear(GL_COLOR_BUFFER_BIT);
+
+		// alterar a cor do triangulo
+		GLint uniform_color = glGetUniformLocation(shaderProgram, "triColor");
+		cout << time(&timer) << endl;
+		float r = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+		float g = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+		float b = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+		glUniform3f(uniform_color, r, g, b);
+
+		// desenhando o triangulo
+		glUseProgram(shaderProgram); // programa que queremos desenhar
+		glBindVertexArray(VAO);
+
+		// estamos usando o VAO
+		glDrawArrays(GL_TRIANGLES, 0, 3); // trinagulo começando na posição 0 do VAO, e o número de pontos são 3
+		glBindVertexArray(0);
+		// não estamos mais usando o VAO
+
 		glfwSwapBuffers(window);
 	}
 
