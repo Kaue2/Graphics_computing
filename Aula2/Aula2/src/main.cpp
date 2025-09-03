@@ -1,9 +1,12 @@
 #include <iostream>
 #include <GL/glew.h>
 #include <GLFW//glfw3.h>
-#include <cstdlib> // For rand() and srand()
-#include <ctime>   // For time()
-#include <time.h>       /* time_t, struct tm, difftime, time, mktime */
+#include <cstdlib>			// For rand() and srand()
+#include <ctime>			// For time()
+#include <time.h>			// * time_t, struct tm, difftime, time, mktime */
+#include <glm\glm.hpp>
+#include <glm\gtc\matrix_transform.hpp>
+#include <glm\gtc\type_ptr.hpp>
 
 using namespace std;
 
@@ -13,6 +16,15 @@ const GLint WIDTH = 800, HEIGHT = 600;
 // shaderProgram é qual programa estou rodando 
 // todo programa pode ser chamado de shader
 GLuint VAO, VBO, shaderProgram; 
+
+float toRadians = 3.1415 / 180.0f;
+
+bool direction = false, up = false, directionSize = false; 
+float triOffSetX = 0.0f, triOffSetMax = 0.7f, triOffSetMin = -0.7f, triIncrementX = 0.01f;
+float triOffSetY = 0.0f, triIncrementY = 0.01781f;
+float triOffSetSize = 0.2f, triOffSetSizeMax = 0.8f, triOffSetSizeMin = 0.2f, triOffSetSizeIncriment = 0.01f;
+float triCurrentAngle = 0.0f, triAngleIncriment = 1.0f;
+
 
 // aqui estamos fazendo um programa (shader) em GLSL
 
@@ -26,8 +38,10 @@ static const char* vertexShader = "                                             
 // esse argumento deve ser um vetor de duas posições                                       \n\
 layout(location=0) in vec2 pos;                                                            \n\
                                                                                            \n\
+uniform mat4 model;                                                                        \n\
+                                                                                           \n\
 void main() {                                                                              \n\
-	gl_Position = vec4(pos.x, pos.y, 0.0, 1.0);                                            \n\
+	gl_Position = model * vec4(pos.x, pos.y, 0.0, 1.0);									   \n\
 }                                                                                          \n\
 ";
 
@@ -152,17 +166,54 @@ int main() {
 	while (!glfwWindowShouldClose(window)) {
 
 		// cor de fundo da janela
-		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		glClearColor(0.7f, 0.0f, 0.0f, 1.0f);
 		glfwPollEvents();
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		// alterar a cor do triangulo
 		GLint uniform_color = glGetUniformLocation(shaderProgram, "triColor");
-		cout << time(&timer) << endl;
-		float r = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-		float g = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-		float b = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-		glUniform3f(uniform_color, r, g, b);
+		// float r = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+		// float g = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+		// float b = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+		glUniform3f(uniform_color, 1.0f, 1.0f, 0.0f);
+
+		// movimenta o triangulo
+		if (!direction)
+			triOffSetX += triIncrementX;
+		else
+			triOffSetX -= triIncrementX;
+
+		if (!up) 
+			triOffSetY -= triIncrementY;
+		else 
+			triOffSetY += triIncrementY;
+
+		if (triOffSetX > triOffSetMax || triOffSetX < triOffSetMin) 
+			direction = !direction;
+
+		if (triOffSetY > triOffSetMax || triOffSetY < triOffSetMin)
+			up = !up;
+
+		triCurrentAngle += triAngleIncriment;
+		if (triCurrentAngle >= 360)
+			triCurrentAngle = 0;
+
+		if (!directionSize)
+			triOffSetSize += triOffSetSizeIncriment;
+		else
+			triOffSetSize -= triOffSetSizeIncriment;
+
+		if (triOffSetSize > triOffSetSizeMax || triOffSetSize < triOffSetSizeMin)
+			directionSize = !directionSize;
+
+		GLint uniformModel = glGetUniformLocation(shaderProgram, "model");
+		glm::mat4 model(1.0f);
+
+		//model = glm::translate(model, glm::vec3(triOffSetX, triOffSetY, 0.0f));
+		//model = glm::scale(model, glm::vec3(triOffSetSize, triOffSetSize, 0.0f));
+		model = glm::rotate(model, triCurrentAngle * toRadians, glm::vec3(1.0f, 1.0f, 1.0f));
+		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+
 
 		// desenhando o triangulo
 		glUseProgram(shaderProgram); // programa que queremos desenhar
