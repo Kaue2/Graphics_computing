@@ -1,2 +1,4 @@
 ﻿  Main.cpp
+C:\Users\kaue.oanjos\source\repos\Graphics_computing\Aula2\Aula2\src\Main.cpp(20,17): warning C4305: 'inicializando': truncamento de 'double' para 'float'
+C:\Users\kaue.oanjos\source\repos\Graphics_computing\Aula2\Aula2\src\Main.cpp(180,9): warning C4101: 'timer': variável local não referenciada
   Aula2.vcxproj -> C:\Users\kaue.oanjos\source\repos\Graphics_computing\Aula2\x64\Debug\Aula2.exe
